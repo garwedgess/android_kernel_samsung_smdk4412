@@ -92,3 +92,6 @@ obj-$(CONFIG_MOBICORE_SUPPORT)  += tzic.o
 
 # Touchwake
 obj-$(CONFIG_TOUCH_WAKE)        += touch_wake.o
+
+# UV Control
+obj-$(CONFIG_CPU_UNDERVOLTING)  += cpu_undervolting.o

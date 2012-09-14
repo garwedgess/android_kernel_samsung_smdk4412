@@ -729,7 +729,17 @@ static int exynos_cpufreq_cpu_init(struct cpufreq_policy *policy)
 		cpumask_setall(policy->cpus);
 	}
 
-	return cpufreq_frequency_table_cpuinfo(policy, exynos_info->freq_table);
+	cpufreq_frequency_table_cpuinfo(policy, exynos_info->freq_table);
+
+	/* Safe default startup limits */
+#ifdef CONFIG_CPU_EXYNOS4210
+	policy->max = 1200000;
+#else
+	policy->max = 1400000;
+#endif
+	policy->min = 200000;
+
+	return 0;
 }
 
 static int exynos_cpufreq_reboot_notifier_call(struct notifier_block *this,
