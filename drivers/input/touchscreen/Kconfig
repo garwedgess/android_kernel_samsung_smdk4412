@@ -997,4 +997,8 @@ config TOUCHSCREEN_ATMEL_MXT540S
 
 source "drivers/input/touchscreen/wacom/Kconfig"
 
+config SLIDE_TO_WAKE
+        bool "Enable slide-to-wake"
+        depends on TOUCHSCREEN_ATMEL_MXT224_U1 || TOUCHSCREEN_MELFAS
+
 endif
