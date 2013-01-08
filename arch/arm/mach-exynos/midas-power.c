@@ -520,7 +520,7 @@ static struct regulator_init_data max77686_buck1_data = {
 #ifdef CONFIG_SLP
 		.max_uV = 1100000,
 #else
-		.max_uV = 1050000,
+		.max_uV = 1200000,
 #endif
 		.always_on = 1,
 		.boot_on = 1,
@@ -551,7 +551,7 @@ static struct regulator_init_data max77686_buck3_data = {
 #ifdef CONFIG_SLP
 		.max_uV = 1150000,
 #else
-		.max_uV = 1100000,
+		.max_uV = 1300000,
 #endif
 		.always_on = 1,
 		.boot_on = 1,
