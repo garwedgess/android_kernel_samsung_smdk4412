@@ -2295,7 +2295,7 @@ void midas_tsp_request_qos(void *data)
 	}
 
 	/* Cancel the QoS request after 1/10 sec */
-	schedule_delayed_work_on(0, &busqos_work, HZ / 5);
+	schedule_delayed_work_on(0, &busqos_work, HZ / 7);
 }
 #endif
 
