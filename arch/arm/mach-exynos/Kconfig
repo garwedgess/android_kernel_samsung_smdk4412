@@ -1824,3 +1824,8 @@ config FORCE_FAST_CHARGE
 	help
 	  A simple sysfs interface to force adapters that
 	  are detected as USB to charge as AC.
+
+config ABB_CONTROL
+	bool "Adaptive body bias control"
+	depends on EXYNOS4_CPUFREQ && CPU_EXYNOS4412
+	default n
