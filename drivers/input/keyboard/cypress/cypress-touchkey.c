@@ -937,7 +937,7 @@ static int sec_touchkey_late_resume(struct early_suspend *h)
 		touchled_cmd_reversed = 0;
 		i2c_touchkey_write(tkey_i2c->client,
 			(u8 *) &touchkey_led_status, 1);
-		pr_debug("[Touchkey] LED returned on\n");
+		printk(KERN_DEBUG "[Touchkey] LED returned on\n");
 	}
 #ifdef TEST_JIG_MODE
 	i2c_touchkey_write(tkey_i2c->client, &get_touch, 1);
