@@ -1604,11 +1604,11 @@ charge_ok:
 			/* If fast charge is disabled or in substitution mode, set stock charge current */
 			default:
 				battery_charge_control(info, info->pdata->chg_curr_ta,
-								info->pdata->in_curr_limit);
+								info->pdata->chg_curr_ta);
 		}
 #else
 		battery_charge_control(info, info->pdata->chg_curr_ta,
-						info->pdata->in_curr_limit);
+						info->pdata->chg_curr_ta);
 #endif
 		break;
 	case POWER_SUPPLY_TYPE_USB:
@@ -1620,7 +1620,7 @@ charge_ok:
 			/* If we are in substitution mode, set AC charge current for USB */
 			case FAST_CHARGE_FORCE_AC:
 				battery_charge_control(info, info->pdata->chg_curr_ta,
-								info->pdata->in_curr_limit);
+								info->pdata->chg_curr_ta);
 				break;
 			/* If we are in custom mA mode, set user requested charge current for USB */
 			case FAST_CHARGE_FORCE_CUSTOM_MA:
