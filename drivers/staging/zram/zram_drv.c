@@ -29,7 +29,6 @@
 #include <linux/genhd.h>
 #include <linux/highmem.h>
 #include <linux/slab.h>
-#include <linux/lzo.h>
 #include <linux/string.h>
 #include <linux/vmalloc.h>
 #ifdef CONFIG_ZRAM_FOR_ANDROID
@@ -38,6 +37,70 @@
 
 
 #include "zram_drv.h"
+
+#if defined(CONFIG_ZRAM_LZO)
+#include <linux/lzo.h>
+#define WMSIZE		LZO1X_MEM_COMPRESS
+#define COMPRESS(s, sl, d, dl, wm)	\
+	lzo1x_1_compress(s, sl, d, dl, wm)
+#define DECOMPRESS(s, sl, d, dl)	\
+	lzo1x_decompress_safe(s, sl, d, dl)
+#elif defined(CONFIG_ZRAM_SNAPPY)
+#include "../snappy/csnappy.h" /* if built in drivers/staging */
+#define WMSIZE_ORDER	((PAGE_SHIFT > 14) ? (15) : (PAGE_SHIFT+1))
+#define WMSIZE		(1 << WMSIZE_ORDER)
+static int snappy_compress_(
+				const unsigned char *src,
+				size_t src_len,
+				unsigned char *dst,
+				size_t *dst_len,
+				void *workmem
+			   )
+{
+	const unsigned char *end = csnappy_compress_fragment(
+		src, (uint32_t)src_len, dst, workmem, WMSIZE_ORDER);
+	*dst_len = end - dst;
+	return 0;
+}
+static int snappy_decompress_(
+				const unsigned char *src,
+				size_t src_len,
+				unsigned char *dst,
+				size_t *dst_len
+			     )
+{
+	uint32_t dst_len_ = (uint32_t)*dst_len;
+	int ret = csnappy_decompress_noheader(src, src_len, dst, &dst_len_);
+	*dst_len = (size_t)dst_len_;
+	return ret;
+}
+
+#define COMPRESS(s, sl, d, dl, wm)	\
+	snappy_compress_(s, sl, d, dl, wm)
+#define DECOMPRESS(s, sl, d, dl)	\
+	snappy_decompress_(s, sl, d, dl)
+#elif defined(CONFIG_ZRAM_LZ4)
+#include "../lz4/lz4.h"
+#define WMSIZE		LZ4_MEM_COMPRESS
+static int lz4_decompress_(
+				const unsigned char *src,
+				size_t src_len,
+				unsigned char *dst,
+				size_t *dst_len
+			  )
+{
+	uint32_t dst_len_ = (uint32_t)*dst_len;
+	int ret = lz4_decompress_unknownoutputsize(src, src_len, dst, &dst_len_);
+	*dst_len = (size_t)dst_len_;
+	return ret;
+}
+#define COMPRESS(s, sl, d, dl, wm)	\
+	lz4_compress(s, sl, d, dl, wm)
+#define DECOMPRESS(s, sl, d, dl)	\
+	lz4_decompress_(s, sl, d, dl)
+#else
+#error either CONFIG_ZRAM_LZO, CONFIG_ZRAM_SNAPPY or CONFIG_ZRAM_LZ4 must be defined
+#endif
 
 /* Globals */
 static int zram_major;
@@ -277,7 +340,7 @@ static int zram_bvec_read(struct zram *zram, struct bio_vec *bvec,
 	cmem = kmap_atomic(zram->table[index].page, KM_USER1) +
 		zram->table[index].offset;
 
-		ret = lzo1x_decompress_safe(
+		ret = DECOMPRESS(
 			cmem + sizeof(*zheader),
 			xv_get_object_size(cmem) - sizeof(*zheader),
 			user_mem, &clen);
@@ -319,13 +382,14 @@ static int zram_read_before_write(struct zram *zram, char *mem, u32 index)
 		return 0;
 	}
 
-	+    ret = DECOMPRESS(
-      cmem + sizeof(*zheader),
-      xv_get_object_size(cmem) - sizeof(*zheader),
-      mem, &clen);
+		ret = DECOMPRESS(
+			cmem + sizeof(*zheader),
+			xv_get_object_size(cmem) - sizeof(*zheader),
+			mem, &clen);
 
-      kunmap_atomic(cmem, KM_USER0);
-      return 0;
+	kunmap_atomic(cmem, KM_USER0);
+
+	return 0;
 }
 
 static int zram_bvec_write(struct zram *zram, struct bio_vec *bvec, u32 index,
@@ -377,27 +441,18 @@ static int zram_bvec_write(struct zram *zram, struct bio_vec *bvec, u32 index,
 
 	if (page_zero_filled(uncmem)) {
 		kunmap_atomic(user_mem, KM_USER0);
-		if (is_partial_io(bvec))
-			kfree(uncmem);
 		zram_stat_inc(&zram->stats.pages_zero);
 		zram_set_flag(zram, index, ZRAM_ZERO);
 		ret = 0;
 		goto out;
 	}
 
-		ret = lzo1x_1_compress(user_mem, PAGE_SIZE, src, &clen,
-					zram->compress_workmem);
+		COMPRESS(user_mem, PAGE_SIZE, src, &clen,
+				zram->compress_workmem);
 
 	kunmap_atomic(user_mem, KM_USER0);
 	if (is_partial_io(bvec))
 			kfree(uncmem);
-
-		if (unlikely(ret != LZO_E_OK)) {
-			mutex_unlock(&zram->lock);
-			pr_err("Compression failed! err=%d\n", ret);
-			zram_stat64_inc(zram, &zram->stats.failed_writes);
-			goto out;
-		}
 
 		/*
 		 * Page is incompressible. Store it as-is (uncompressed)
@@ -560,6 +615,10 @@ static inline int valid_io_request(struct zram *zram, struct bio *bio)
 		return 0;
 	}
 
+	if (unlikely((bio->bi_sector << SECTOR_SHIFT) + bio->bi_size >=
+		     zram->disksize))
+		return 0;
+
 	/* I/O request is valid */
 	return 1;
 }
@@ -662,7 +721,7 @@ int zram_init_device(struct zram *zram)
 
 	zram_set_disksize(zram, totalram_pages << PAGE_SHIFT);
 
-	zram->compress_workmem = kzalloc(LZO1X_MEM_COMPRESS, GFP_KERNEL);
+	zram->compress_workmem = kzalloc(WMSIZE, GFP_KERNEL);
 	if (!zram->compress_workmem) {
 		pr_err("Error allocating compressor working memory!\n");
 		ret = -ENOMEM;
@@ -859,8 +918,8 @@ static int __init zram_init(void)
 	return 0;
 
 free_devices:
-	while (dev_id)
-		destroy_device(&zram_devices[--dev_id]);
+	while (dev_id >= 0)
+		destroy_device(&zram_devices[dev_id--]);
 	kfree(zram_devices);
 unregister:
 	unregister_blkdev(zram_major, "zram");
@@ -876,9 +935,11 @@ static void __exit zram_exit(void)
 	for (i = 0; i < zram_num_devices; i++) {
 		zram = &zram_devices[i];
 
+		get_disk(zram->disk);
 		destroy_device(zram);
 		if (zram->init_done)
 			zram_reset_device(zram);
+		put_disk(zram->disk);
 	}
 
 	unregister_blkdev(zram_major, "zram");
