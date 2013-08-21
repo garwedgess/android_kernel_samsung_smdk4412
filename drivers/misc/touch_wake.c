@@ -72,11 +72,7 @@ static void touchwake_early_suspend(struct early_suspend * h)
 				touchwake_disable_touch();
 			}
 		} else {
-			if (timed_out) {
-				wake_lock(&touchwake_wake_lock);
-			} else {
-				touchwake_disable_touch();
-			}
+			wake_lock(&touchwake_wake_lock);
 		}
 	} else {
 		touchwake_disable_touch();
