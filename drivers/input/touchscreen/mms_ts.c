@@ -50,6 +50,10 @@
 
 #include <asm/unaligned.h>
 
+#ifdef CONFIG_CPU_FREQ_GOV_ONDEMAND_FLEXRATE
+#include <mach/midas-tsp.h>
+#endif
+
 #include "../keyboard/cypress/cypress-touchkey.h"
 #include "touchboost_switch.h"
 
@@ -758,6 +762,13 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 		set_dvfs_lock(info, !!touch_is_pressed);
 	}
 #endif
+
+#ifdef CONFIG_CPU_FREQ_GOV_ONDEMAND_FLEXRATE
+  if(!!touch_is_pressed){
+    midas_tsp_request_qos();
+  }
+#endif
+
 out:
 	return IRQ_HANDLED;
 }
