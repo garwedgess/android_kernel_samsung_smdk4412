@@ -1,0 +1,13 @@
+#!/sbin/busybox sh
+
+UKSM_CHECK=`cat /sys/kernel/mm/uksm/run`
+
+if [ "$UKSM_CHECK" == "1" ]; then
+	saved_mem=`echo "Saved memory: $((\`cat /sys/kernel/mm/uksm/pages_sharing\`*4096/1024/1024)) MB"`
+	shard_mem=`echo "Shared memory: $((\`cat /sys/kernel/mm/uksm/pages_shared\`*4096/1024/1024)) MB"`
+
+	echo "$saved_mem"
+	echo "$shard_mem"
+else
+	echo "UKSM is disabled,, no stats available"
+fi

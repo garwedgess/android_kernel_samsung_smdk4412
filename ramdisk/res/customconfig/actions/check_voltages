@@ -1,0 +1,33 @@
+#!/sbin/busybox sh
+
+
+if [[ "$2" == "int" ]]; then
+	while read FREQ VOLT; do I_FREQ=`echo $FREQ | cut -c 1-3`; echo $I_FREQ $VOLT; done</sys/devices/system/cpu/busfreq/int_volt_table
+elif [[ "$2" == "mif" ]]; then
+	while read FREQ VOLT; do M_FREQ=`echo $FREQ | cut -c 1-3`; echo $M_FREQ $VOLT; done</sys/devices/system/cpu/busfreq/mif_volt_table
+elif [[ "$2" == "cpu" ]]; then
+	cat /sys/devices/system/cpu/cpu0/cpufreq/UV_uV_table
+elif [[ "$2" == "gpu" ]]; then
+	for GPU_VOLT in `cat /sys/class/misc/gpu_voltage_control/gpu_voltage_0 /sys/class/misc/gpu_voltage_control/gpu_voltage_1 /sys/class/misc/gpu_voltage_control/gpu_voltage_2 /sys/class/misc/gpu_voltage_control/gpu_voltage_3 /sys/class/misc/gpu_voltage_control/gpu_voltage_4`; do
+  		echo "$GPU_VOLT"
+	done
+elif [[ "$2" == "cpuslice" ]]; then
+	for ARM_SLICE in `cat /sys/devices/system/abb/arm/arm_slice_1_volt; echo -e "\r"; cat /sys/devices/system/abb/arm/arm_slice_2_volt; echo -e "\r"; cat /sys/devices/system/abb/arm/arm_slice_3_volt; echo -e "\r"; cat /sys/devices/system/abb/arm/arm_slice_4_volt`; do
+  		echo "$ARM_SLICE"
+	done
+elif [[ "$2" == "gpuslice" ]]; then
+	for GPU_SLICE in `cat /sys/devices/system/abb/g3d/g3d_slice_1_volt; echo -e "\r"; cat /sys/devices/system/abb/g3d/g3d_slice_2_volt; echo -e "\r"; cat /sys/devices/system/abb/g3d/g3d_slice_3_volt`; do
+  		echo "$GPU_SLICE"
+	done
+elif [[ "$2" == "mifslice" ]]; then
+	for MIF_SLICE in `cat /sys/devices/system/abb/mif/mif_slice_1_volt; echo -e "\r"; cat /sys/devices/system/abb/mif/mif_slice_2_volt`; do
+  		echo "$MIF_SLICE"
+	done
+elif [[ "$2" == "intslice" ]]; then
+	for INT_SLICE in `cat /sys/devices/system/abb/int/int_slice_1_volt; echo -e "\r"; cat /sys/devices/system/abb/int/int_slice_2_volt`; do
+  		echo "$INT_SLICE"
+	done
+else
+	echo "Something went wrong, cannot check voltages.."
+fi
+

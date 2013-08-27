@@ -1,0 +1,158 @@
+#!/sbin/busybox sh
+
+SDSPATH='/sys/class/misc/scoobydoo_sound'
+
+if [[ ! -z $2 ]]; then
+    filename=$(basename $2)
+fi
+
+if [[ ! -z $3 ]]; then
+  evalcmd='eval "$filename=$3"'
+  eval $evalcmd
+fi
+
+scoobyds_predef="0"
+scoobyds_find=`grep "scoobyds_predef" $DEFAULT_PROFILE | cut -d'=' -f2`
+
+write_value() {  
+  echo "$1=$2" >> $DEFAULT_PROFILE
+}
+
+edit_value() {
+
+  # Archi's Pro Implementation
+  # Not being used yet
+  WEHAVE="$2"
+  
+  ##if [ $WEHAVE == "X" ]; then
+    # We got X, thats means we want to get current variable
+    ##WECHANGE="$1"
+        ##WEHAVE=`cat $SDSPATH/$WECHANGE`
+        ##eval $WECHANGE="$WEHAVE"
+        # Voila, we got new variable
+  ##fi
+  
+  g_find=`grep $1=.* $DEFAULT_PROFILE`
+    
+  if [[ -z $g_find ]]; then
+    write_value $1 $WEHAVE
+  else
+    sed -i "s/$1=[^ ]*/$1=$WEHAVE/" $DEFAULT_PROFILE 
+  fi
+}
+
+write_values(){  
+  edit_value headphone_eq_b1_gain $headphone_eq_b1_gain
+  edit_value headphone_eq_b2_gain $headphone_eq_b2_gain
+  edit_value headphone_eq_b3_gain $headphone_eq_b3_gain
+  edit_value headphone_eq_b4_gain $headphone_eq_b4_gain
+  edit_value headphone_eq_b5_gain $headphone_eq_b5_gain
+  edit_value headphone_eq $headphone_eq
+  edit_value scoobyds_predef $scoobyds_predef 
+
+  # Some cleaning maybe?
+  
+  echo $headphone_eq_b1_gain >$SDSPATH/headphone_eq_b1_gain
+  echo $headphone_eq_b2_gain >$SDSPATH/headphone_eq_b2_gain
+  echo $headphone_eq_b3_gain >$SDSPATH/headphone_eq_b3_gain
+  echo $headphone_eq_b4_gain >$SDSPATH/headphone_eq_b4_gain
+  echo $headphone_eq_b5_gain >$SDSPATH/headphone_eq_b5_gain
+  echo $up_threshold >$SDSPATH/up_threshold
+  echo $up_threshold_sleep >$SDSPATH/up_threshold_sleep
+}
+
+case "$sdpredef" in
+  0)
+    # FLAT (DISABLED)
+    scoobyds_predef="0"
+    headphone_eq_b1_gain="0"
+    headphone_eq_b2_gain="0"
+    headphone_eq_b3_gain="0"
+    headphone_eq_b4_gain="0"
+    headphone_eq_b5_gain="0"
+    headphone_eq="1"
+    headphone_eq="0"
+
+    write_values
+    ;;
+  1)
+    # BASS-EXTREME
+    scoobyds_predef="1"
+    headphone_eq_b1_gain="12"
+    headphone_eq_b2_gain="8"
+    headphone_eq_b3_gain="3"
+    headphone_eq_b4_gain="-1"
+    headphone_eq_b5_gain="1"
+    headphone_eq="1"
+	
+    write_values
+    ;;
+  2)
+    # BASS AND TREBLE
+    scoobyds_predef="2"
+    headphone_eq_b1_gain="10"
+    headphone_eq_b2_gain="7"
+    headphone_eq_b3_gain="0"
+    headphone_eq_b4_gain="2"
+    headphone_eq_b5_gain="5"
+    headphone_eq="1"
+
+    write_values
+    ;;
+  3)
+    # TREBLE
+    scoobyds_predef="3"
+    headphone_eq_b1_gain="-5"
+    headphone_eq_b2_gain="1"
+    headphone_eq_b3_gain="0"
+    headphone_eq_b4_gain="4"
+    headphone_eq_b5_gain="3"
+    headphone_eq="1"
+	
+    write_values
+    ;;
+  4)
+    # CLASSIC
+    scoobyds_predef="4"
+    headphone_eq_b1_gain="0"
+    headphone_eq_b2_gain="0"
+    headphone_eq_b3_gain="0"
+    headphone_eq_b4_gain="-3"
+    headphone_eq_b5_gain="-5"
+    headphone_eq="1"
+	
+    write_values
+    ;;
+  5)
+    # PLEASANT FOR EARS
+    scoobyds_predef="5"
+    headphone_eq_b1_gain="8"
+    headphone_eq_b2_gain="3"
+    headphone_eq_b3_gain="-2"
+    headphone_eq_b4_gain="3"
+    headphone_eq_b5_gain="8"
+    headphone_eq="1"
+	
+    write_values
+    ;;
+  6)
+    # EARGASM
+    scoobyds_predef="6"
+    headphone_eq_b1_gain="12"
+    headphone_eq_b2_gain="8"
+    headphone_eq_b3_gain="4"
+    headphone_eq_b4_gain="2"
+    headphone_eq_b5_gain="3"
+    headphone_eq="1"
+	
+    write_values
+    ;;
+  *)
+    if [[ ! -z $scoobyds_find ]]; then
+      scoobyds_predef="$scoobyds_find"
+    fi
+    ;;
+esac;
+
+eval echo $scoobyds_predef
+

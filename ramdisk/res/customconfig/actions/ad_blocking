@@ -1,0 +1,25 @@
+#!/sbin/busybox sh
+
+HOST_FILE=/system/etc/hosts
+TMPFILE=/res/temp/hosts.zip
+
+mount -o remount,rw /
+mount -o remount,rw /system
+
+if [[ "$2" == "install" ]]; then
+		mkdir -p /res/temp
+		wget http://winhelp2002.mvps.org/hosts.zip -O $TMPFILE > /dev/null 2>&1
+		unzip -p $TMPFILE HOSTS > $HOST_FILE
+		chmod 644 $HOST_FILE
+		echo "AD Blocker: installed to $HOST_FILE, reboot to finish installation."
+		rm -rf /res/temp
+elif [[ "$2" == "reset" ]]; then
+	rm $HOST_FILE
+	echo "127.0.0.1           localhost" > $HOST_FILE
+	echo "AD Blocker: Un-installed, reboot to finish reset.."
+else
+	echo "There was an error: ad blocker not intstalled.."
+fi
+
+mount -o remount,ro /
+mount -o remount,ro /system

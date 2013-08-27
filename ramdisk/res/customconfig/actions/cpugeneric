@@ -1,0 +1,21 @@
+#!/sbin/busybox sh
+
+if [ -f $2 ];then
+	FILEVAR=$(basename $2)
+
+	if [ -z $3 ]; then
+		evalcmd='eval echo \$$FILEVAR'
+		if [ "a`eval $evalcmd`" == "a" ]; then
+			sed -i "s/scaling_max_freq=.*/scaling_max_freq=$3/g" $DEFAULT_PROFILE
+			eval $FILEVAR=`cat $2`
+			echo $FILEVAR=`cat $2` >> $DEFAULT_PROFILE
+		fi
+	else
+		if [ "$CONTROLSWITCH_CPU" == "on" -o "$CONFIG_BOOTED" == "true" ]; then
+			echo $3 > $2
+		fi
+		eval $FILEVAR=`cat $2`
+	fi
+
+	eval echo \$$FILEVAR
+fi

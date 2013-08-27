@@ -1,0 +1,19 @@
+#!/sbin/busybox sh
+
+TMPFILE=/res/temp/zram_statistics
+
+mount -o remount,rw /
+mount -o remount,rw /system
+
+if [ -d /sys/devices/virtual/block/zram0 ]; then
+	mkdir -p /res/temp
+	echo "total            used         free" > $TMPFILE
+	free | grep Swap: | cut -c 13-44 >> $TMPFILE
+	cat $TMPFILE
+	rm -rf /res/temp
+else
+	echo "ZRAM is not yet enabled"
+fi
+
+mount -o remount,ro /
+mount -o remount,ro /system

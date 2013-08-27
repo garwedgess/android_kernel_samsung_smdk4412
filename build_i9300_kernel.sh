@@ -1,10 +1,15 @@
 #!/bin/bash
 TOPDIR=$(cd $(dirname "$0"); pwd)
+META_DIR=META-INF/com/google/android
 #TCHAIN=/opt/toolchains/arm-eabi-linaro-4.7.3/bin/arm-eabi-
 TCHAIN=/opt/toolchains/arm-eabi-linaro-4.6.2/bin/arm-eabi-
 #TCHAIN=/opt/toolchains/arm-eabi-4.4.3/bin/arm-eabi-
+CVI=`cat ${TOPDIR}/ramdisk/res/customconfig/config.revision | awk '{n=$NF+1; gsub(/[0-9]+$/,n) }1'`
+LIN_KVER=`cat include/config/kernel.release | awk -F - '{print $1}'`
 JNUM=`cat /proc/cpuinfo | grep processor | wc -l`
 DATE_STR=`date '+%d%m%y'`
+KRVER="1"		# edit fot kernel release version   
+
 
 # colors
 red=$(tput setaf 1)
@@ -28,6 +33,9 @@ else
     make lupus_i9300_defconfig
 fi
 
+if [ -f ${TOPDIR}/ramdisk/system/EMPTY_DIRECTORY ]; then
+  find ${TOPDIR}/ramdisk -name EMPTY_DIRECTORY -exec rm -rf {} \;
+fi
 
 # clean from previous build
 if [ -d ${TOPDIR}/modules ]; then 
@@ -74,13 +82,24 @@ fi
 ${TCHAIN}strip --strip-unneeded ${TOPDIR}/modules/*
 cp -r ${TOPDIR}/modules ${TOPDIR}/ramdisk/lib
 
+# bump version for Stweaks
+echo ${CVI} > ${TOPDIR}/ramdisk/res/customconfig/config.revision
+
 
 echo; echo "${cya}Creating boot.img..${txtrst}"; echo
 # compress ramdisk
 ./mkbootfs ${TOPDIR}/ramdisk | gzip -9 > ${TOPDIR}/ramdisk.cpio.gz
 
-# creatinf boot.img
+# creating boot.img
 ./mkbootimg --kernel ${TOPDIR}/arch/arm/boot/zImage --ramdisk ramdisk.cpio.gz --board smdk4x12 --base 0x10000000 --pagesize 2048 --ramdiskaddr 0x11000000 -o ${TOPDIR}/boot.img
 
-cp ${TOPDIR}/default_kernel.zip ${TOPDIR}/LuPuS_${DATE_STR}.zip
-zip -rq LuPuS_${DATE_STR}.zip boot.img
+
+# create the zip file
+cp ${TOPDIR}/default_kernel.zip ${TOPDIR}/LuPuS_CM-102-${DATE_STR}_v${KRVER}.zip
+mkdir -p ${TOPDIR}/${META_DIR}
+unzip -j "${TOPDIR}/LuPuS_CM-102-${DATE_STR}_v${KRVER}.zip" "${META_DIR}/updater-script" -d "${META_DIR}"
+sed -i "s/DATE_RELEASE/${DATE_STR}_v${KRVER}/g" ${TOPDIR}/${META_DIR}/updater-script
+sed -i "s/KERNEL_VERSION/${LIN_KVER}/g" ${TOPDIR}/${META_DIR}/updater-script
+zip -rq LuPuS_CM-102-${DATE_STR}_v${KRVER}.zip boot.img
+zip -gr LuPuS_CM-102-${DATE_STR}_v${KRVER}.zip META-INF
+rm -rf ${TOPDIR}/META-INF
