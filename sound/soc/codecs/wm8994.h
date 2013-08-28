@@ -161,7 +161,6 @@ struct wm8994_priv {
 	const struct firmware *mbc;
 	const struct firmware *mbc_vss;
 	const struct firmware *enh_eq;
-	bool jack_present;
 };
 
 #endif

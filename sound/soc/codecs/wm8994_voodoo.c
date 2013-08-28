@@ -21,8 +21,8 @@ static int wm8994_write(struct snd_soc_codec *codec, unsigned int reg,
 	unsigned int value);
 static unsigned int wm8994_read(struct snd_soc_codec *codec,
 				unsigned int reg);
-#define CONFIG_SND_VOODOO_DEVELOPMENT
 #endif
+
 #ifndef MODULE
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35) && !defined(GALAXY_TAB) && !defined(GALAXY_S3)
 #include "wm8994_samsung.h"
@@ -84,12 +84,12 @@ bool speaker_tuning = false;
 // global active or kill switch
 bool enable = false;
 
-bool dac_osr128 = true;
+bool dac_osr128 = false;
 bool adc_osr128 = false;
 #ifndef GALAXY_TAB_TEGRA
-bool fll_tuning = true;
+bool fll_tuning = false;
 #endif
-bool dac_direct = true;
+bool dac_direct = false;
 bool mono_downmix = false;
 
 // equalizer
@@ -191,8 +191,8 @@ int hpvol(int channel)
 		if (digital_gain < 0)
 			vol = (vol - ((digital_gain / 100) + 5) / 10);
 
-		if (vol > 63)
-			return 63;
+		if (vol > 62)
+			return 62;
 	}
 
 	return vol;
@@ -227,8 +227,9 @@ void update_hpvol(bool with_fade)
 
 	// don't affect headphone amplifier volume
 	// when not on heapdhones or if call is active
-	if (!is_path(HEADPHONES)
-#if !defined(GALAXY_S3)
+	if (
+		!is_path(HEADPHONES)
+#if !defined(GALAXY_S3) //todo
 	    || (wm8994->codec_state & CALL_ACTIVE)
 #endif
 		)
@@ -498,7 +499,7 @@ bool is_path(int unified_path)
 	// headphones
 	case HEADPHONES:
 #ifdef GALAXY_S3
-		return wm8994->jack_present;
+		return true;
 #else
 #ifdef NEXUS_S
 		return (wm8994->cur_path == HP
@@ -568,7 +569,7 @@ bool is_path(int unified_path)
 	// Standard recording presets
 	// for M110S Gingerbread: added check non call
 	case MAIN_MICROPHONE:
-#ifdef GALAXY_S3
+#ifdef GALAXY_S3 //todo
 		return !(wm8994->jack_mic);
 #else
 		return (wm8994->codec_state & CAPTURE_ACTIVE)
@@ -585,8 +586,10 @@ bool is_path_media_or_fm_no_call_no_record()
 	DECLARE_WM8994(codec);
 
 	if (
+#ifdef GALAXY_S3 //todo
 		is_path(HEADPHONES)
-#ifndef GALAXY_S3
+#else
+		(is_path(HEADPHONES)
 	     && (wm8994->codec_state & PLAYBACK_ACTIVE)
 	     && (wm8994->stream_state & PCM_STREAM_PLAYBACK)
 	     && !(wm8994->codec_state & CALL_ACTIVE)
@@ -691,6 +694,7 @@ void update_osr128(bool with_mute)
 unsigned short fll_tuning_get_value(unsigned short val)
 {
 #ifdef GALAXY_S3
+	return val;
 	val = (val >> WM8994_FLL1_LOOP_GAIN_WIDTH << WM8994_FLL1_LOOP_GAIN_WIDTH);
 #else
 	val = (val >> WM8994_FLL1_GAIN_WIDTH << WM8994_FLL1_GAIN_WIDTH);
@@ -754,9 +758,6 @@ void update_mono_downmix(bool with_mute)
 
 unsigned short dac_direct_get_value(unsigned short val, bool can_reverse)
 {
-#ifdef GALAXY_S3
-	if(val & WM8994_IN2RN_TO_MIXOUTL) return WM8994_IN2RN_TO_MIXOUTL | WM8994_DAC1L_TO_MIXOUTL;
-#endif
 	if (is_path_media_or_fm_no_call_no_record()) {
 
 		if (dac_direct) {
@@ -791,7 +792,9 @@ unsigned short digital_gain_get_value(unsigned short val)
 	int aif_gain = 0xC0;
 	int i;
 	int step = -375;
-
+#ifdef GALAXY_S3
+	return val;
+#endif
 	if (is_path_media_or_fm_no_call_no_record()) {
 
 		if (digital_gain <= 0) {
@@ -950,7 +953,9 @@ void apply_saturation_prevention_drc()
 	int i;
 	int step = 750;
 
-#ifndef GALAXY_S3
+#ifdef GALAXY_S3 //todo
+	return;
+#endif
 	// don't apply the limiter if not playing media
 	// (exclude FM radio, it has its own DRC settings)
 	if (!is_path_media_or_fm_no_call_no_record()
@@ -963,9 +968,7 @@ void apply_saturation_prevention_drc()
 	      || headphone_eq
 	      || digital_gain >= 0))
 		return;
-#else
-	return; //todo
-#endif
+
 	if (debug_log(LOG_INFOS))
 		printk("Voodoo sound: apply saturation prevention DRC\n");
 
@@ -998,9 +1001,6 @@ void apply_saturation_prevention_drc()
 
 	// enable DRC
 	val &= ~(WM8994_AIF1DAC1_DRC_ENA_MASK);
-#ifdef GALAXY_S3
-	if( is_path(HEADPHONES) )
-#endif
 	val |= WM8994_AIF1DAC1_DRC_ENA;
 	wm8994_write(codec, WM8994_AIF1_DRC1_1, val);
 
@@ -1059,8 +1059,8 @@ static ssize_t headphone_amplifier_level_store(struct device *dev,
 	if (sscanf(buf, "%hu", &vol) == 1) {
 
 		// hard limit to 62 because 63 introduces distortions
-		if (vol > 63)
-			vol = 63;
+		if (vol > 62)
+			vol = 62;
 
 		// left and right are set to the same volumes by this control
 		hp_level[0] = hp_level[1] = vol;
@@ -1154,6 +1154,7 @@ static ssize_t digital_gain_store(struct device *dev,
 				      const char *buf, size_t size)
 {
 	int new_digital_gain;
+return size;
 	if (sscanf(buf, "%d", &new_digital_gain) == 1) {
 		if (new_digital_gain <= 36000 && new_digital_gain >= -71625) {
 			if (new_digital_gain > digital_gain) {
@@ -1818,7 +1819,6 @@ unsigned int voodoo_hook_wm8994_write(struct snd_soc_codec *codec_,
 			update_stereo_expansion(false);
 			bypass_write_hook = false;
 		}
-
 	}
 	if (debug_log(LOG_VERBOSE))
 	// log every write to dmesg
