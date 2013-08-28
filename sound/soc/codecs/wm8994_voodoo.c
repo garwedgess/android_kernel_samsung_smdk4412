@@ -84,10 +84,10 @@ bool speaker_tuning = false;
 // global active or kill switch
 bool enable = false;
 
-bool dac_osr128 = false;
+bool dac_osr128 = true;
 bool adc_osr128 = false;
 #ifndef GALAXY_TAB_TEGRA
-bool fll_tuning = false;
+bool fll_tuning = true;
 #endif
 bool dac_direct = false;
 bool mono_downmix = false;
@@ -499,7 +499,7 @@ bool is_path(int unified_path)
 	// headphones
 	case HEADPHONES:
 #ifdef GALAXY_S3
-		return true;
+		return snd_soc_read(codec, WM1811_JACKDET_CTRL) & WM1811_JACKDET_CTRL;
 #else
 #ifdef NEXUS_S
 		return (wm8994->cur_path == HP
@@ -694,7 +694,6 @@ void update_osr128(bool with_mute)
 unsigned short fll_tuning_get_value(unsigned short val)
 {
 #ifdef GALAXY_S3
-	return val;
 	val = (val >> WM8994_FLL1_LOOP_GAIN_WIDTH << WM8994_FLL1_LOOP_GAIN_WIDTH);
 #else
 	val = (val >> WM8994_FLL1_GAIN_WIDTH << WM8994_FLL1_GAIN_WIDTH);
