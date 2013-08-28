@@ -9,7 +9,7 @@ echo '
 
 echo '
   <settingsTab name="CPU">
-      <settingsPane description="PegasusQ is the default governor for daily running and complete power management schemes. Lulzactiveq is a modified lulzactive governor and a second version of Luzactive based on Interactive and Smartass governors. UserSpace give users to set frequencies. PowerSave locks max frequency to min frequency. Performance governor is purely for synthetic uses, locking frequency at maximum with all cores online. zzMoove is a battery friendly behaving hotplug conservative governor." 
+      <settingsPane description="PegasusQ is the default governor for daily running and complete power management schemes. Lulzactiveq is a modified lulzactive governor and a second version of Luzactive based on Interactive and Smartass governors. OnDemand has excellent interface fluidity because of its high-frequency bias, but it can also have a relatively negative effect on battery life versus other governors. PowerSave locks max frequency to min frequency. zzMoove is a battery friendly behaving hotplug conservative governor." 
                   name="Active governor choice">' >> $XML
 echo "
       <spinner description=\"Set active governor. Default: `cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor`\" 
