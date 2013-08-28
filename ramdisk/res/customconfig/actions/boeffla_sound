@@ -1,0 +1,13 @@
+#!/sbin/busybox sh
+
+if [ ! -f /data/app/com.near.boefflasoun*.apk ]; then
+	# get boeflla sound from playstore
+	echo "You must download Boeffla Sound from Playstore in order to use these settings"
+	am start https://play.google.com/store/apps/details?id=com.near.boefflasound&hl=en > /dev/null 2>&1
+elif "$CONFIG_BOOTED" == "false" && [ -f /data/app/com.near.boefflasoun*.apk ]; then
+	# Killing Boeffla Sound if it was already open
+	echo "Starting Boeffla Sound App"
+	pkill -f "com.near.boefflasound" > /dev/null 2>&1
+	am start -a android.intent.action.MAIN -n com.near.boefflasound/com.near.boefflasound.activities.BoefflaSoundActivity > /dev/null 2>&1
+fi
+

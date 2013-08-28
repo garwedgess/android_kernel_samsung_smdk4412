@@ -18,4 +18,5 @@ if [ -f $2 ];then
 	fi
 
 	eval echo \$$FILEVAR
+	awk '!x[$0]++' $DEFAULT_PROFILE > /res/temp.txt; mv /res/temp.txt $DEFAULT_PROFILE
 fi
