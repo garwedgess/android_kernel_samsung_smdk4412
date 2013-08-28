@@ -5,7 +5,6 @@ META_DIR=META-INF/com/google/android
 TCHAIN=/opt/toolchains/arm-eabi-linaro-4.6.2/bin/arm-eabi-
 #TCHAIN=/opt/toolchains/arm-eabi-4.4.3/bin/arm-eabi-
 CVI=`cat ${TOPDIR}/ramdisk/res/customconfig/config.revision | awk '{n=$NF+1; gsub(/[0-9]+$/,n) }1'`
-LIN_KVER=`cat include/config/kernel.release | awk -F - '{print $1}'`
 JNUM=`cat /proc/cpuinfo | grep processor | wc -l`
 DATE_STR=`date '+%d%m%y'`
 KRVER="1"		# edit fot kernel release version   
@@ -95,6 +94,7 @@ echo; echo "${cya}Creating boot.img..${txtrst}"; echo
 
 
 # create the zip file
+LIN_KVER=`cat include/config/kernel.release | awk -F - '{print $1}'`
 cp ${TOPDIR}/default_kernel.zip ${TOPDIR}/LuPuS_CM-102-${DATE_STR}_v${KRVER}.zip
 mkdir -p ${TOPDIR}/${META_DIR}
 unzip -j "${TOPDIR}/LuPuS_CM-102-${DATE_STR}_v${KRVER}.zip" "${META_DIR}/updater-script" -d "${META_DIR}"
