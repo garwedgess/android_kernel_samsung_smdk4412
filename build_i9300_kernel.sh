@@ -1,8 +1,8 @@
 #!/bin/bash
 TOPDIR=$(cd $(dirname "$0"); pwd)
 META_DIR=META-INF/com/google/android
-#TCHAIN=/opt/toolchains/arm-eabi-linaro-4.7.3/bin/arm-eabi-
-TCHAIN=/opt/toolchains/arm-eabi-linaro-4.6.2/bin/arm-eabi-
+TCHAIN=/opt/toolchains/arm-eabi-linaro-4.7.3/bin/arm-eabi-
+#TCHAIN=/opt/toolchains/arm-eabi-linaro-4.6.2/bin/arm-eabi-
 #TCHAIN=/opt/toolchains/arm-eabi-4.4.3/bin/arm-eabi-
 CVI=`cat ${TOPDIR}/ramdisk/res/customconfig/config.revision | awk '{n=$NF+1; gsub(/[0-9]+$/,n) }1'`
 JNUM=`cat /proc/cpuinfo | grep processor | wc -l`
