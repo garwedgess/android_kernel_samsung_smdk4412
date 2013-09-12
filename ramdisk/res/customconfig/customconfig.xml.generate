@@ -583,15 +583,6 @@ echo '
              <spinnerItem name="1000 mA" value="1000"/> 
       </spinner>
   </settingsPane>
-    <settingsPane description="" 
-                  name="Hardware Key backlight on screen touch">
-
-     <checkbox  description="Disable the backlight on the hardware keys, when screen is touched, Default: enabled" name="Hardware Key backlight on screen touch"
-                name="" 
-                action="generic01 /sys/class/sec/sec_touchkey/touch_led_on_screen_touch"
-                label="Enable Touch-led-on-screen-touch"/>
-
-    </settingsPane>
 
 	<settingsPane description="A reboot is needed for the changes to take effect!" name="AD Blocker">
 
