@@ -9,8 +9,17 @@ echo '
 
 echo '
   <settingsTab name="CPU">
-      <settingsPane description="PegasusQ is the default governor for daily running and complete power management schemes. Lulzactiveq is a modified lulzactive governor and a second version of Luzactive based on Interactive and Smartass governors. OnDemand has excellent interface fluidity because of its high-frequency bias, but it can also have a relatively negative effect on battery life versus other governors. PowerSave locks max frequency to min frequency. zzMoove is a battery friendly behaving hotplug conservative governor." 
-                  name="Active governor choice">' >> $XML
+    <settingsPane description="Apply the settings on boot only if the desired settings prove to be stable, else the device ends up in a boot-loop. If turned off, the displayed values do not correspond the current live values but the saved profile values, some inconsistencies may occur on applying." 
+                  name="CPU control switch">
+      <checkbox description="If enabled, the below settings will be applied at boot." 
+                name="Set CPU settings on boot" 
+                action="controlswitch CPU"
+                label="Set on boot"/>
+    </settingsPane>
+      <settingsPane description="" 
+                  name="CPU governor and frequencies">
+
+		<button description="Use this button to see what CPU governor and frequencies are being used right now!" name="Check Active CPU Control" action="check_voltages check_gov_freq" label="Check CPU Control"/>' >> $XML
 echo "
       <spinner description=\"Set active governor. Default: `cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor`\" 
                name=\"Current governor\" 
@@ -21,36 +30,8 @@ for GOVERNOR in `cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_gove
         <spinnerItem name=\"$GOVERNOR\" value=\"$GOVERNOR\"/>" >> $XML
 done
 
-echo '
-      </spinner>
-    </settingsPane>
-	<settingsPane description="These settings control CFS (Complete Fair Scheduler) Task Scheduler Settings" name="CFS Settings">
-      <checkbox description="Disabling GENTLE_FAIR_SLEEPERS may give you better UI responsiveness." name="GENTLE_FAIR_SLEEPERS" action="schedfeat GENTLE_FAIR_SLEEPERS" label="GENTLE_FAIR_SLEEPERS"/>
-    </settingsPane>
-	<settingsPane description="" 
-		name="CPU Idle and Power Settings">
-      <spinner description="Sets the CPU Idle Mode. Idle+LPA is the default and recommended for S3." name="CPU Idle Mode" action="generic /sys/module/cpuidle_exynos4/parameters/enable_mask">
-             <spinnerItem name="Idle + LPA (default)" value="2"/> 
-             <spinnerItem name="AFTR + LPA" value="3"/> 
-             <spinnerItem name="AFTR only" value="1"/> 
-             <spinnerItem name="Idle only" value="0"/> 
-      </spinner>
-      <seekBar description="Sets the sched_mc value which changes the cpu scheduler behaviour for multi-cpu systems. 0 is kernel default value which turns sched_mc off. Setting it to 1 means that the first core will be tried to be loaded more and setting it to 2 will bias task wake-ups to semi-idle cpu package for power savings. Default: 0"
-            name="sched_mc" action="generic /sys/devices/system/cpu/sched_mc_power_savings" unit="" min="0" reversed="false" step="1" max="2"/>
-    </settingsPane>
-	 
-    <settingsPane description="Apply the settings on boot only if the desired settings prove to be stable, else the device ends up in a boot-loop. If turned off, the displayed values do not correspond the current live values but the saved profile values, some inconsistencies may occur on applying." 
-                  name="CPU control switch">
-      <checkbox description="If enabled, the below settings will be applied at boot." 
-                name="Set CPU settings on boot" 
-                action="controlswitch CPU"
-                label="Set on boot"/>
-    </settingsPane>
-
-    <settingsPane description="CPU scaling" 
-                  name="CPU Scaling frequencies">' >> $XML
-
 echo "
+  </spinner>
       <spinner description=\"Set the maximum freqency the CPU scales up to. Default: `cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq | rev | cut -c 4- | rev` MHz.\" 
                name=\"CPU max frequency\" 
                action=\"cpugeneric /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq\">" >> $XML
@@ -75,11 +56,26 @@ done < /sys/devices/system/cpu/cpu0/cpufreq/UV_uV_table
 echo '
       </spinner>
     </settingsPane>
+	<settingsPane description="These settings control CFS (Complete Fair Scheduler) Task Scheduler Settings" name="CFS Settings">
+      <checkbox description="Disabling GENTLE_FAIR_SLEEPERS may give you better UI responsiveness." name="GENTLE_FAIR_SLEEPERS" action="schedfeat GENTLE_FAIR_SLEEPERS" label="GENTLE_FAIR_SLEEPERS"/>
+    </settingsPane>
+	<settingsPane description="" 
+		name="CPU Idle and Power Settings">
+      <spinner description="Sets the CPU Idle Mode. Idle+LPA is the default and recommended for S3." name="CPU Idle Mode" action="generic /sys/module/cpuidle_exynos4/parameters/enable_mask">
+             <spinnerItem name="Idle + LPA (default)" value="2"/> 
+             <spinnerItem name="AFTR + LPA" value="3"/> 
+             <spinnerItem name="AFTR only" value="1"/> 
+             <spinnerItem name="Idle only" value="0"/> 
+      </spinner>
+      <seekBar description="Sets the sched_mc value which changes the cpu scheduler behaviour for multi-cpu systems. 0 is kernel default value which turns sched_mc off. Setting it to 1 means that the first core will be tried to be loaded more and setting it to 2 will bias task wake-ups to semi-idle cpu package for power savings. Default: 0"
+            name="sched_mc" action="generic /sys/devices/system/cpu/sched_mc_power_savings" unit="" min="0" reversed="false" step="1" max="2"/>
+    </settingsPane>' >> $XML
 
+echo '
     <settingsPane description="Decreasing voltage will lower power consumption of the CPU. Increasing it on overclocked frequencies improves stability. Too low voltage may cause instabilities and freezes." 
                   name="CPU voltage control">
 
-		<button description="Use this button to see what CPU Voltage is used right now!" name="Check Active CPU Voltage" action="check_voltages cpu" label="Check CPU Voltage"/>' >> $XML
+	<button description="Use this button to see what CPU Voltage is used right now!" name="Check Active CPU Voltage" action="check_voltages cpu" label="Check CPU Voltage"/>' >> $XML
 
 while read FREQ UVOLT; do
   echo "
@@ -455,14 +451,14 @@ echo '
                 action="generic /sys/kernel/mm/uksm/sleep_millisecs"
                 unit="mS" min="0" reversed="false" step="100" max="10000" default="100"/>
 
-      <spinner description="This is a macro UKSM speed mode interface. There are several alternative modes, [*]Full (90%) [*]Medium (50%) [*]Low (20%) [*]Quiet (greater than 1%) each use a certain percentage of the CPU.       Default = Full (90%)" name="UKSM CPU Modes" action="generic /sys/kernel/uksm/cpu_governor">
-             <spinnerItem name="Full - (90%)" value="full"/> 
-             <spinnerItem name="Medium - (50%)" value="medium"/> 
-             <spinnerItem name="Low - (20%)" value="low"/>
-             <spinnerItem name="Quiet - (+1%)" value="low"/> 
+      <spinner description="This is a macro UKSM speed mode interface. There are several alternative modes, [*]Full (95%) [*]Medium (50%) [*]Low (20%) [*]Quiet (greater than 1%) each use a certain percentage of the CPU.       Default = Full (95%)" name="UKSM CPU Modes" action="generic-long uksm_cpu_mode /sys/kernel/uksm/cpu_governor">
+             <spinnerItem name="Full (95%)" value="full"/> 
+             <spinnerItem name="Medium (50%)" value="medium"/> 
+             <spinnerItem name="Low (20%)" value="low"/>
+             <spinnerItem name="Quiet (+1%)" value="quiet"/> 
       </spinner>
 
-      <seekBar  description="Already using a specific CPU Mode? You can further limit the cpu usgae by the exact percentage. Default = 95." 
+      <seekBar  description="Already using a specific CPU Mode? You can further limit the cpu usgae by the exact percentage. Default = 95" 
                 name="UKSM CPU Percentage" 
                 action="generic /sys/kernel/mm/uksm/max_cpu_percentage"
                 unit="%" min="1" reversed="false" step="1" max="99"/>
@@ -475,7 +471,6 @@ echo '
     <settingsPane description="" 
                   name="Virtual Machine Settings">
 
-
       <seekBar  description="A low value means the kernel will try to avoid swapping as much as possible where a higher value instead will make the kernel aggressively try to use swap space." 
                 name="Virtual machine swappiness" 
                 action="generic /proc/sys/vm/swappiness"
@@ -486,11 +481,11 @@ echo '
                 action="generic /proc/sys/vm/vfs_cache_pressure"
                 unit="%" min="0" reversed="false" step="1" max="100"/>
 
-
-      <seekBar  description="Writing to this will cause the kernel to drop clean caches, dentries and inodes from memory, causing that memory to become free. To free pagecache: (1) To free dentries and inodes: (2) To free pagecache, dentries and inodes: (3). Default = 0"
-                name="Drop caches" 
-                action="generic /proc/sys/vm/drop_caches"
-                unit="%" min="0" reversed="false" step="1" max="3"/>
+      <spinner description="Writing to this will cause the kernel to drop clean caches, dentries and inodes from memory, causing that memory to become free. Default = 0 (will reset to 0 on r" name="Drop caches" action="drop_cache /proc/sys/vm/drop_caches">
+             <spinnerItem name="Pagecache (1)" value="1"/> 
+             <spinnerItem name="Dentries and inodes (2)" value="2"/> 
+             <spinnerItem name="Pagecache, Dentries and inodes (3)" value="3"/>
+      </spinner>
 
       <seekBar  description="This is used to force the Linux VM to keep a minimum number of kilobytes free. The VM uses this number to compute a pages_min value for each lowmem zone in the system. Each lowmem zone gets a number of reserved free pages based proportionally on its size. Default is 2048kb." 
                 name="Minimum free Kilobytes" 
@@ -527,7 +522,6 @@ echo '
 
     </settingsPane>
 
-
     <settingsPane description="" 
                   name="Touch Boost">
     
@@ -560,12 +554,12 @@ echo '
 <settingsPane name="Fast Charge"
               description="Speed up charge time. [Warning]: Use at your own risk, changing charging voltages may cause damage to your device or the device you are using to charge from.">
 
-      <checkbox description="Enable or Disable fast charging. Default = Disabled" 
+      <checkbox description="Enable or Disable fast charging. Default = Enabled" 
                 name="Enable Fast Charging" 
                 action="generic01 /sys/kernel/fast_charge/force_fast_charge"
-                label="Enabled fast charging"/>
+                label="Enable fast charging"/>
 
-      <spinner description="AC,CDP,Dock charge currents. Default = 1000" name="AC Charge" action="generic /sys/kernel/fast_charge/ac_charge_level">
+      <spinner description="AC,CDP,Dock charge currents. Default = 1000" name="AC Charge" action="generic-long ac_charge /sys/kernel/fast_charge/ac_charge_level">
              <spinnerItem name="1000 mA" value="1000"/> 
              <spinnerItem name="1100 mA" value="1100"/> 
              <spinnerItem name="1200 mA" value="1200"/>
@@ -574,7 +568,7 @@ echo '
              <spinnerItem name="1500 mA" value="1500"/> 
       </spinner>
 
-      <spinner description="USB charge current. Default = 475" name="USB Charge" action="generic /sys/kernel/fast_charge/usb_charge_level">
+      <spinner description="USB charge current. Default = 475" name="USB Charge" action="generic-long usb_charge /sys/kernel/fast_charge/usb_charge_level">
              <spinnerItem name="475 mA" value="475"/> 
              <spinnerItem name="600 mA" value="600"/> 
              <spinnerItem name="700 mA" value="700"/>

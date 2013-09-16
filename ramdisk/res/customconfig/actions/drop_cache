@@ -1,5 +1,8 @@
 #!/sbin/busybox sh
 
+if [ "$2" == "/proc/sys/vm/drop_caches" ]; then
+  sync
+fi
 
 if [ -f $2 ];then
 	FILEVAR=$(basename $2)
@@ -14,6 +17,11 @@ if [ -f $2 ];then
 		echo $3 > $2
 		eval $FILEVAR=`cat $2`
 	fi
+
+if [[ "$2" == "/proc/sys/vm/drop_caches" ]] && [[ "$3" == "0" ]]
+  sync
+  echo "0" > $2
+fi
 
 	eval echo \$$FILEVAR
 fi
